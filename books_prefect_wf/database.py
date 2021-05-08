@@ -8,6 +8,8 @@ from sqlalchemy.sql import func
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import pandas as pd
+
 Base = declarative_base()
 
 class BookDetailsDim(Base):
@@ -49,12 +51,23 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.session = session_maker()
 
-    def add_book_details_data(self, vectors: List[Dict[str, Any]]) -> None:
+    def query_table_to_df(self, table_object):
+        query = self.session.query(table_object)
+        df = pd.read_sql(query.statement, self.session.bind)
+        return df
+
+    def add_book_details_data(self, vectors: List[Dict[str, Any]], columns) -> None:
         for entry in vectors:
             vec = BookDetailsDim(
-                **{k: entry[k] for k in BookDetailsDim.__table__.columns.keys()}
+                **{k: entry[k] for k in columns}
             )
             # insert or update vector
             self.session.merge(vec)
         self.session.commit()
 
+
+if __name__ == "__main__":
+
+    db = Database(conn_id='books_db')
+    df = db.query_table_to_df(BookDetailsDim)
+    print(df.head())

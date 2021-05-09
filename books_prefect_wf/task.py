@@ -63,8 +63,8 @@ def main():
 
         load_book_details_dim(df_book_details)
 
-    flow.run()
-
+    # flow.run()
+    flow.register(project_name='NYTBooks')
 
 if __name__ == "__main__":
     main()

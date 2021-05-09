@@ -25,7 +25,7 @@ def extract_book_details(listnames: list):
         book_details = [book['book_details'][0] for book in books['results']]
         df_temp = pd.DataFrame(book_details)
         all_dfs.append(df_temp)
-    return pd.concat(all_dfs).drop_duplicates()
+    return pd.concat(all_dfs, ignore_index=True).drop_duplicates(subset=['title', 'author'])
 
 @task
 def extract_book_details_dim():
@@ -36,8 +36,13 @@ def extract_book_details_dim():
 
 @task
 def transform_book_details_delta(df_books_api, df_books_db):
-    df = pd.concat([df_books_api[book_details_cols], df_books_db[book_details_cols]], ignore_index=True)
-    df = df.drop_duplicates(keep=False)
+    df = pd.concat([
+        df_books_api[book_details_cols],
+        df_books_db[book_details_cols],
+        df_books_db[book_details_cols]
+    ], ignore_index=True)
+
+    df = df.drop_duplicates(subset=['title', 'author'], keep=False)
     return df
 
 
@@ -52,7 +57,7 @@ def main():
 
         df_book_details_db = extract_book_details_dim()
         listnames = extract_book_listnames()
-        df_book_details_api = extract_book_details(listnames[7:12])
+        df_book_details_api = extract_book_details(listnames[7:14])
 
         df_book_details = transform_book_details_delta(df_book_details_api, df_book_details_db)
 
